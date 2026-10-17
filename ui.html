@@ -1,0 +1,467 @@
+<title>IMSOARING Climb Analyser</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=B612:wght@400;700&family=B612+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: tool page. Result headline, barograph with launch/engine/gain markings, then event log and settings side by side. IMSOARING brand: B612 cockpit type, slate and amber. */
+:root{
+  --bg:#eef3f7; --surface:#ffffff; --well:#e4ebf1;
+  --fg:#14202b; --muted:#4f5d6a; --line:#c9d5df;
+  --accent:#f2ab3c; --accent-text:#94570a; --accent-ink:#1b1408;
+  --climb:#14855a; --engine:#c4402c; --engine-fill:rgba(196,64,44,.13); --suspect:#a8690f; --launch-fill:rgba(79,93,106,.12);
+  --trace:#14202b; --trace-fill:rgba(242,171,60,.20);
+  --font-ui:"B612","Segoe UI",system-ui,sans-serif;
+  --font-num:"B612 Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:12px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141a20; --surface:#1c232a; --well:#11161b;
+  --fg:#e7ecf0; --muted:#97a5b1; --line:#2f3b46;
+  --accent:#f2ab3c; --accent-text:#f2ab3c; --accent-ink:#1b1408;
+  --climb:#4fd18b; --engine:#ff7262; --engine-fill:rgba(255,114,98,.14); --suspect:#f2ab3c; --launch-fill:rgba(151,165,177,.12);
+  --trace:#e7ecf0; --trace-fill:rgba(242,171,60,.15);
+  color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#141a20; --surface:#1c232a; --well:#11161b;
+  --fg:#e7ecf0; --muted:#97a5b1; --line:#2f3b46;
+  --accent:#f2ab3c; --accent-text:#f2ab3c; --accent-ink:#1b1408;
+  --climb:#4fd18b; --engine:#ff7262; --engine-fill:rgba(255,114,98,.14); --suspect:#f2ab3c; --launch-fill:rgba(151,165,177,.12);
+  --trace:#e7ecf0; --trace-fill:rgba(242,171,60,.15);
+  color-scheme:dark }
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+.det-in{display:none;font-size:12.5px;color:var(--muted);margin:2px 0 0 17px;white-space:normal}
+@media (max-width:600px){.det-in{display:block}td.det,th.det{display:none}}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font-ui);font-size:15px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:18px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+h1,h2{margin:0;text-wrap:balance}
+p{margin:0}
+.num{font-family:var(--font-num);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header h1{font-size:19px;display:flex;align-items:center;gap:10px;font-weight:700}
+header .brand{letter-spacing:.14em}
+header .brand b{color:var(--accent-text)}
+header .prod{font-weight:400;color:var(--muted);padding-left:10px;border-left:1px solid var(--line)}
+header .sp{flex:1}
+.file{position:relative;display:inline-flex;align-items:center;gap:10px;border:1px dashed var(--line);border-radius:10px;padding:9px 14px;cursor:pointer;background:var(--surface)}
+.file:hover,.file.drag{border-color:var(--accent)}
+.file input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.file b{font-size:14px}
+.file span{font-size:12.5px;color:var(--muted)}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px}
+.panel h2{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:12px}
+
+.result{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 28px;align-items:end}
+@media (max-width:700px){.result{grid-template-columns:minmax(0,1fr)}}
+.big .k{font-family:var(--font-num);font-size:12px;letter-spacing:.14em;color:var(--muted)}
+.big .v{font-family:var(--font-num);font-weight:700;font-size:clamp(40px,7vw,64px);line-height:1;color:var(--climb);font-variant-numeric:tabular-nums}
+.big .v small{font-size:.38em;color:var(--muted);font-weight:400;margin-left:8px}
+.meta{display:grid;gap:4px;min-width:0}
+.meta .flight{font-weight:700;font-size:16px;overflow-wrap:anywhere}
+.meta .line{color:var(--muted);font-size:14px}
+.figs{display:flex;flex-wrap:wrap;gap:12px 36px;align-items:flex-end}
+.big.second .v{font-size:clamp(26px,4vw,36px);color:var(--fg)}
+.big.second .k{color:var(--accent-text)}
+.big .sub{font-size:13px;color:var(--muted);margin-top:4px;font-family:var(--font-num)}
+.wrap > *, .cols > *{min-width:0}
+#climbBody td{white-space:nowrap}
+#climbBody tr{cursor:pointer}
+#climbBody tr:hover td{background:var(--well)}
+#climbBody tr[aria-selected=true] td{background:var(--well)}
+#climbBody tr.hi td{color:var(--climb);font-weight:700}
+.tag{display:inline-block;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--climb);color:var(--climb);border-radius:999px;padding:0 7px;margin-left:6px;font-weight:700;vertical-align:1px}
+.badge{display:inline-block;margin-top:6px;font-family:var(--font-num);font-size:12px;letter-spacing:.06em;padding:3px 10px;border-radius:999px;border:1px solid var(--accent);color:var(--accent-text);justify-self:start}
+.sample-tag{font-family:var(--font-num);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-text)}
+
+.chart-wrap{position:relative}
+#chart{display:block;width:100%;height:clamp(240px,34vw,360px);cursor:crosshair;touch-action:none}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:10px;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.hint{font-size:12.5px;color:var(--muted)}
+
+.cols{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:860px){.cols{grid-template-columns:minmax(0,1fr)}}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:7px 10px 7px 0;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700}
+td.n,th.n{text-align:right}
+td .num{white-space:nowrap}
+tr.best td{color:var(--climb);font-weight:700}
+.ev{display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.ev::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--muted)}
+.ev.eng::before{background:var(--engine)}
+.ev.sus::before{background:var(--suspect)}
+.ev.rel::before{background:var(--accent)}
+.ev.gain::before{background:var(--climb)}
+
+.settings{display:grid;gap:12px}
+.field{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:10px;align-items:center}
+.field label{font-size:14px}
+.field small{display:block;font-size:12px;color:var(--muted)}
+select,input[type=text],input[type=number]{font:inherit;font-size:14px;color:var(--fg);background:var(--well);border:1px solid var(--line);border-radius:8px;padding:6px 9px;width:100%;min-width:0}
+input[type=text]{font-family:var(--font-num)}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:14px;cursor:pointer}
+.check input{width:17px;height:17px;margin-top:2px;accent-color:var(--accent)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+button{font:inherit;font-size:14px;color:var(--fg);background:var(--well);border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer}
+button:hover{border-color:var(--muted)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+
+.warn{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.warn li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:8px;font-size:14px}
+.warn li::before{content:"!";width:18px;height:18px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:12px;display:grid;place-items:center;margin-top:1px}
+.err{color:var(--engine);font-size:14px}
+
+#multi[hidden]{display:none}
+#multi tbody tr{cursor:pointer}
+#multi tbody tr[aria-selected=true] td{background:var(--well)}
+#multi td:first-child{max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.copied{font-size:13px;color:var(--climb)}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1><svg width="30" height="20" viewBox="0 0 30 20" aria-hidden="true"><path d="M1 8.5h28M15 3v14M11.5 16.5h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/><path d="M15 3l-1.6 3h3.2z" fill="var(--accent)"/></svg><span class="brand">IM<b>SOARING</b></span><span class="prod">Climb Analyser</span></h1>
+    <span class="sp"></span>
+    <label class="file" id="drop">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 18c3-1 4-7 7-7s3 4 6 4 3-6 5-9"/><path d="M3 21h18"/></svg>
+      <span><b>Choose IGC files</b><br><span>or drop them here · stays on this device</span></span>
+      <input type="file" id="fileIn" accept=".igc,.IGC" multiple>
+    </label>
+  </header>
+
+  <section class="panel" aria-labelledby="h-res">
+    <h2 id="h-res" class="sr" hidden>Result</h2>
+    <div class="result">
+      <div class="figs">
+        <div class="big">
+          <div class="k">HEIGHT GAIN</div>
+          <div class="v" id="climbV">–</div>
+          <div class="sub" id="climbSub"></div>
+        </div>
+      </div>
+      <div class="meta">
+        <span class="sample-tag" id="sampleTag">Sample flight · synthetic motor glider</span>
+        <span class="flight" id="flightName"></span>
+        <span class="line" id="climbLine"></span>
+        <span class="line" id="flightLine"></span>
+        <span class="badge" id="badge" hidden></span>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="multi" hidden aria-labelledby="h-multi">
+    <h2 id="h-multi">Loaded flights</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>File</th><th>Date</th><th>Launch</th><th class="n">Max climb</th><th>Notes</th></tr></thead>
+      <tbody id="multiBody"></tbody>
+    </table></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-baro">
+    <h2 id="h-baro">Barograph</h2>
+    <div class="chart-wrap"><canvas id="chart" aria-label="Altitude against time, with launch, engine runs and the maximum climb marked"></canvas></div>
+    <div class="legend">
+      <span><i style="background:var(--launch-fill);border:1px solid var(--line)"></i>Launch</span>
+      <span><i style="background:var(--engine-fill);border:1px solid var(--engine)"></i>Engine run</span>
+      <span><i style="border:1px dashed var(--suspect)"></i>Suspected engine run</span>
+      <span><i style="background:var(--climb)"></i>Highest climb</span>
+      <span><i style="background:var(--climb);opacity:.45"></i>Other climbs (after an engine run)</span>
+    </div>
+    <p class="hint" style="margin-top:6px">Click a climb in the list to highlight it. Click the barograph to set the release point yourself.</p>
+  </section>
+
+  <section class="panel" aria-labelledby="h-cl">
+    <h2 id="h-cl">Climbs between engine runs</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>#</th><th>Low</th><th>Top</th><th class="n">Climb</th><th class="n">Average</th><th class="n">Time</th></tr></thead>
+      <tbody id="climbBody"></tbody>
+    </table></div>
+    <p class="hint" id="climbHint" style="margin-top:8px"></p>
+  </section>
+
+  <div class="cols">
+    <section class="panel" aria-labelledby="h-ev">
+      <h2 id="h-ev">Flight events</h2>
+      <div class="tbl"><table>
+        <thead><tr><th>Event</th><th>Time (UTC)</th><th class="n">Altitude</th><th class="det">Detail</th></tr></thead>
+        <tbody id="evBody"></tbody>
+      </table></div>
+      <ul class="warn" id="warn" style="margin-top:16px"></ul>
+      <p class="err" id="err" role="alert"></p>
+    </section>
+
+    <section class="panel settings" aria-labelledby="h-set">
+      <h2 id="h-set" style="margin:0">Settings</h2>
+      <div class="field"><label for="alt">Altitude source<small>Badge claims use pressure altitude.</small></label>
+        <select id="alt"><option value="auto">Pressure if logged</option><option value="pressure">Pressure</option><option value="gps">GPS</option></select></div>
+      <div class="field"><label for="release">Release time<small>UTC, HH:MM:SS. Blank finds it automatically.</small></label>
+        <input type="text" id="release" placeholder="auto" inputmode="numeric" autocomplete="off"></div>
+      <div class="field"><label for="enl">Engine noise threshold<small>ENL/MOP value (0–999) that counts as engine running.</small></label>
+        <input type="number" id="enl" min="50" max="999" step="10" value="500"></div>
+      <label class="check"><input type="checkbox" id="treat"><span>Exclude suspected engine runs<br><small class="muted">For logs with no engine sensor: long, straight, steady climbs after release are treated as engine runs.</small></span></label>
+      <div class="row">
+        <button type="button" id="resetBtn">Reset settings</button>
+        <button type="button" class="primary" id="copyBtn">Copy report</button>
+        <span class="copied" id="copied" role="status"></span>
+      </div>
+      <pre id="reportPre" hidden></pre>
+    </section>
+  </div>
+</div>
+
+<script>
+/*CORE*/
+</script>
+<script>
+const SAMPLE_IGC = /*SAMPLE*/;
+(() => {
+'use strict';
+const C = IGCClimb;
+const $ = s => document.querySelector(s);
+const state = {flights: [], sel: 0, climbSel: null};
+
+function settings(){
+  const thr = Math.max(1, Math.min(999, parseInt($('#enl').value, 10) || 500));
+  return {alt: $('#alt').value, release: $('#release').value.trim() || null, enl_threshold: thr, mop_threshold: thr, treat_suspected: $('#treat').checked};
+}
+function uiMsg(m){ return m.replace('use --treat-suspected to exclude them', 'tick “Exclude suspected engine runs” to exclude them').replace('or set it with --release', 'or set it manually'); }
+
+function runAll(){
+  $('#err').textContent = '';
+  for (const f of state.flights){
+    try { f.r = C.analyse(f.igc, settings()); f.err = null; }
+    catch(e){ f.r = null; f.err = e.message; }
+  }
+  render();
+}
+
+function addFiles(list){
+  const files = [...list].filter(f => /\.igc$/i.test(f.name) || f.type === 'text/plain' || !f.type);
+  if (!files.length) return;
+  Promise.all(files.map(f => f.text().then(t => ({name: f.name, text: t})))).then(arr => {
+    const loaded = [], bad = [];
+    for (const {name, text} of arr){
+      try { loaded.push({name, igc: C.parseIGC(text), sample: false}); }
+      catch(e){ bad.push(`${name}: ${e.message}`); }
+    }
+    if (loaded.length){ state.flights = loaded; state.sel = 0; state.climbSel = null; $('#release').value = ''; runAll(); }
+    $('#err').textContent = bad.join(' · ');
+  });
+}
+
+const fmtM = m => Math.round(m).toLocaleString('en-GB') + ' m';
+const fmtFt = m => Math.round(m * C.M_TO_FT).toLocaleString('en-GB') + ' ft';
+
+function render(){
+  const f = state.flights[state.sel];
+  // multi-file table
+  const multi = $('#multi');
+  multi.hidden = state.flights.length < 2;
+  const mb = $('#multiBody'); mb.textContent = '';
+  state.flights.forEach((x, i) => {
+    const tr = document.createElement('tr');
+    tr.setAttribute('aria-selected', String(i === state.sel)); tr.tabIndex = 0;
+    const cells = x.r ? [x.name, x.r.date || '–', x.r.launch.type, x.r.max_gain ? fmtM(x.r.max_gain.gain_m) : '–',
+      [x.r.engine_runs.length ? `${x.r.engine_runs.length} engine run${x.r.engine_runs.length>1?'s':''}` : '', x.r.suspected_engine_runs.length ? 'suspected engine' : '', x.r.badge_gain ? x.r.badge_gain.split(' (')[0] : ''].filter(Boolean).join(' · ')]
+      : [x.name, '–', '–', '–', x.err];
+    cells.forEach((c, k) => { const td = document.createElement('td'); td.textContent = c; if (k === 3) td.className = 'n num'; tr.append(td); });
+    const pick = () => { state.sel = i; state.climbSel = null; render(); };
+    tr.addEventListener('click', pick); tr.addEventListener('keydown', e => { if (e.key === 'Enter') pick(); });
+    mb.append(tr);
+  });
+
+  $('#sampleTag').hidden = !f.sample;
+  $('#flightName').textContent = f.sample ? 'Self-launch, three thermals, engine restarted mid-flight' : f.name;
+  const r = f.r;
+  const evb = $('#evBody'), warn = $('#warn');
+  evb.textContent = ''; warn.textContent = '';
+  $('#climbBody').textContent = '';
+  if (!r){ $('#climbV').textContent = '–'; $('#climbSub').textContent = ''; $('#climbLine').textContent = ''; $('#flightLine').textContent = ''; $('#badge').hidden = true; $('#err').textContent = f.err || ''; draw(); return; }
+
+  const hc = r.highest_climb;
+  if (state.climbSel !== null && !r.climbs[state.climbSel]) state.climbSel = null;
+  if (hc){
+    $('#climbV').innerHTML = `${hc.gain_m.toLocaleString('en-GB')}<small>m · ${hc.gain_ft.toLocaleString('en-GB')} ft</small>`;
+    $('#climbSub').textContent = r.climbs.length > 1 ? `highest of ${r.climbs.length} climbs · avg ${hc.avg_rate.toFixed(1)} m/s` : `lowest point to highest point · avg ${hc.avg_rate.toFixed(1)} m/s`;
+    $('#climbLine').textContent = `From ${fmtM(hc.low_m)} at ${hc.low_time} to ${fmtM(hc.high_m)} at ${hc.high_time} UTC`;
+  } else { $('#climbV').textContent = '0'; $('#climbSub').textContent = ''; $('#climbLine').textContent = 'No climb found after the launch.'; }
+  const who = [r.pilot, r.glider, r.reg || r.comp].filter(Boolean).join(' · ');
+  $('#flightLine').textContent = `${r.date || 'Date unknown'}${who ? ' · ' + who : ''} · ${r.altitude_source} altitude · engine sensor: ${r.engine_sensor || 'none'}`;
+  $('#badge').hidden = !r.badge_gain;
+  $('#badge').textContent = r.badge_gain ? `Enough gain for ${r.badge_gain} · indicative only` : '';
+
+  const ev = [];
+  ev.push(['Take-off', '', r.takeoff.time, r.takeoff.alt_m, '']);
+  ev.push(['Release', 'rel', r.launch.release_time, r.launch.release_alt_m, `${r.launch.type}, ${fmtM(r.launch.height_m)} launch · ${r.launch.found_by}`]);
+  for (const e of r.engine_runs) ev.push(['Engine run', 'eng', `${e.start}–${e.end}`, null, `${C.dur(e.duration_s)}, ${fmtM(e.start_alt_m)} → ${fmtM(e.end_alt_m)}${e.peak_enl ? ` · peak ENL ${e.peak_enl}` : ''}${e.peak_mop ? ` · peak MOP ${e.peak_mop}` : ''}`]);
+  for (const e of r.suspected_engine_runs) ev.push(['Suspected engine', 'sus', `${e.start}–${e.end}`, null, `${C.dur(e.duration_s)} straight climb, +${fmtM(e.gain_m)} at ${e.rate} m/s`]);
+  if (hc){ ev.push([r.climbs.length > 1 ? 'Highest climb: low point' : 'Climb low point', 'gain', hc.low_time, hc.low_m, '']); ev.push([r.climbs.length > 1 ? 'Highest climb: top' : 'Climb top', 'gain', hc.high_time, hc.high_m, `+${fmtM(hc.gain_m)} at ${hc.avg_rate.toFixed(1)} m/s`]); }
+  ev.push(['Landing', '', r.landing.time, r.landing.alt_m, '']);
+  const order = s => { const m = s.match(/^(\d\d):(\d\d):(\d\d)/); return +m[1]*3600 + +m[2]*60 + +m[3]; };
+  const t0 = order(r.takeoff.time);
+  ev.sort((x, y) => ((order(x[2]) - t0 + 86400) % 86400) - ((order(y[2]) - t0 + 86400) % 86400));
+  for (const [name, cls, time, alt, detail] of ev){
+    const tr = document.createElement('tr');
+    const c1 = document.createElement('td'); const s = document.createElement('span'); s.className = 'ev ' + cls; s.textContent = name; c1.append(s);
+    if (detail){ const d = document.createElement('span'); d.className = 'det-in'; d.textContent = detail; c1.append(d); }
+    const c2 = document.createElement('td'); c2.innerHTML = `<span class="num"></span>`; c2.firstChild.textContent = time;
+    const c3 = document.createElement('td'); c3.className = 'n num'; c3.textContent = alt == null ? '' : fmtM(alt);
+    const c4 = document.createElement('td'); c4.className = 'muted det'; c4.textContent = detail;
+    tr.append(c1, c2, c3, c4); evb.append(tr);
+  }
+
+  const cb = $('#climbBody');
+  r.climbs.forEach((c, k) => {
+    const tr = document.createElement('tr'); tr.tabIndex = 0;
+    if (c.highest) tr.className = 'hi';
+    tr.setAttribute('aria-selected', String(state.climbSel === k));
+    const vals = [String(c.climb), `${fmtM(c.low_m)} · ${c.low_time}`, `${fmtM(c.high_m)} · ${c.high_time}`, `+${fmtM(c.gain_m)}`, `${c.avg_rate.toFixed(1)} m/s`, C.dur(c.duration_s)];
+    vals.forEach((v, i) => { const td = document.createElement('td'); td.textContent = v; td.className = (i ? 'num' : '') + (i >= 3 ? ' n' : '');
+      if (i === 0 && c.highest){ const t = document.createElement('span'); t.className = 'tag'; t.textContent = 'Highest'; td.append(t); }
+      tr.append(td); });
+    const pick = () => { state.climbSel = state.climbSel === k ? null : k; render(); };
+    tr.addEventListener('click', pick); tr.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); pick(); } });
+    cb.append(tr);
+  });
+  $('#climbHint').textContent = r.climbs.length > 1
+    ? `${r.climbs.length} climbs, separated by engine runs. Each runs from the highest point between engine runs back to the lowest point before it. Click a row to highlight it.`
+    : r.climbs.length ? 'One climb: no engine run between the lowest point and the highest point.' : 'No climb found after the launch.';
+
+  for (const m of r.warnings){ const li = document.createElement('li'); li.textContent = uiMsg(m); warn.append(li); }
+  draw();
+}
+
+/* ---------- Barograph ---------- */
+const cv = $('#chart'), ctx = cv.getContext('2d');
+let geo = null;
+function css(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function niceStep(range, target){ const raw = range / target, p = 10 ** Math.floor(Math.log10(raw)); for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= raw) return m * p; return 10 * p; }
+function draw(){
+  const dpr = window.devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+  const f = state.flights[state.sel]; const r = f && f.r;
+  if (!r){ geo = null; return; }
+  const {T, A, tk, ld} = r._series;
+  const i0 = Math.max(0, T.findIndex(t => t >= T[tk] - 120)), i1 = (() => { let k = ld; while (k < T.length - 1 && T[k] < T[ld] + 120) k++; return k; })();
+  let lo = Infinity, hi = -Infinity; for (let i = i0; i <= i1; i++){ lo = Math.min(lo, A[i]); hi = Math.max(hi, A[i]); }
+  const step = niceStep(Math.max(100, hi - lo), 5);
+  const yMin = Math.floor(lo / step) * step, yMax = Math.ceil((hi + step * 0.15) / step) * step;
+  const padL = 56, padR = 14, padT = 30, padB = 26, w = W - padL - padR, h = H - padT - padB;
+  const h0 = () => h;
+  const tMin = T[i0], tMax = T[i1];
+  const X = t => padL + (t - tMin) / (tMax - tMin) * w, Y = a => padT + (1 - (a - yMin) / (yMax - yMin)) * h;
+  geo = {X, tMin, tMax, padL, w, T, i0, i1};
+  const fg = css('--fg'), muted = css('--muted'), line = css('--line');
+  ctx.font = `11px ${css('--font-num')}`; ctx.textBaseline = 'middle';
+  // grid
+  ctx.strokeStyle = line; ctx.lineWidth = 1; ctx.fillStyle = muted; ctx.textAlign = 'right';
+  for (let a = yMin; a <= yMax + 1e-6; a += step){ const y = Math.round(Y(a)) + .5; ctx.globalAlpha = .7; ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke(); ctx.globalAlpha = 1; ctx.fillText(Math.round(a).toLocaleString('en-GB') + ' m', padL - 6, y); }
+  // time ticks
+  const span = tMax - tMin, tStep = [300, 600, 900, 1800, 3600, 7200].find(s => span / s <= Math.max(3, w / 90)) || 7200;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let t = Math.ceil(tMin / tStep) * tStep; t <= tMax; t += tStep){ const x = X(t); ctx.fillText(C.hms(t).slice(0, 5), x, padT + h + 7); ctx.beginPath(); ctx.moveTo(Math.round(x) + .5, padT + h); ctx.lineTo(Math.round(x) + .5, padT + h + 4); ctx.stroke(); }
+  // bands
+  const band = (a, b, fill, stroke, dashed) => {
+    const x0 = X(T[a]), x1 = Math.max(X(T[b]), x0 + 2);
+    if (fill){ ctx.fillStyle = fill; ctx.fillRect(x0, padT, x1 - x0, h); }
+    if (stroke){ ctx.strokeStyle = stroke; ctx.lineWidth = 1.2; ctx.setLineDash(dashed ? [4, 3] : []); ctx.strokeRect(x0 + .5, padT + .5, x1 - x0 - 1, h - 1); ctx.setLineDash([]); }
+  };
+  band(tk, r._series.rel, css('--launch-fill'));
+  for (const e of r.engine_runs) band(e._i[0], e._i[1], css('--engine-fill'), css('--engine'));
+  for (const e of r.suspected_engine_runs) band(e._i[0], e._i[1], null, css('--suspect'), true);
+  // trace
+  ctx.beginPath(); for (let i = i0; i <= i1; i++){ const x = X(T[i]), y = Y(A[i]); i === i0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
+  ctx.lineTo(X(T[i1]), padT + h); ctx.lineTo(X(T[i0]), padT + h); ctx.closePath(); ctx.fillStyle = css('--trace-fill'); ctx.fill();
+  ctx.beginPath(); for (let i = i0; i <= i1; i++){ const x = X(T[i]), y = Y(A[i]); i === i0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
+  ctx.strokeStyle = css('--trace'); ctx.lineWidth = 1.4; ctx.lineJoin = 'round'; ctx.stroke();
+  // engine labels
+  ctx.fillStyle = css('--engine'); ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.font = `700 10.5px ${css('--font-num')}`;
+  for (const e of r.engine_runs){ const x = X(T[e._i[0]]) + 3; if (X(T[e._i[1]]) - x > 20) ctx.fillText('ENG', x, padT + 4); }
+  // release marker
+  const rx = X(T[r._series.rel]), ry = Y(A[r._series.rel]);
+  ctx.fillStyle = css('--accent'); ctx.beginPath(); ctx.moveTo(rx, ry - 9); ctx.lineTo(rx - 6, ry - 18); ctx.lineTo(rx + 6, ry - 18); ctx.closePath(); ctx.fill();
+  // climbs: every climb as a green overlay on the trace, the highest (or selected) one bold
+  const climb = css('--climb'), accentC = css('--accent');
+  const focus = state.climbSel !== null ? r.climbs[state.climbSel] : r.highest_climb;
+  const seg = (l, h) => { ctx.beginPath(); for (let i = l; i <= h; i++){ const x = X(T[i]), y = Y(A[i]); i === l ? ctx.moveTo(x, y) : ctx.lineTo(x, y); } ctx.stroke(); };
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  for (const c of r.climbs){ if (c === focus) continue; ctx.strokeStyle = climb; ctx.globalAlpha = .45; ctx.lineWidth = 3; seg(c._i[0], c._i[1]); }
+  ctx.globalAlpha = 1;
+  if (focus){
+    const [l, h] = focus._i, xl = X(T[l]), yl = Y(A[l]), xh = X(T[h]), yh = Y(A[h]);
+    ctx.fillStyle = climb; ctx.globalAlpha = .14;
+    ctx.beginPath(); ctx.moveTo(xl, padT + h0()); for (let i = l; i <= h; i++) ctx.lineTo(X(T[i]), Y(A[i])); ctx.lineTo(xh, padT + h0()); ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1;
+    ctx.strokeStyle = climb; ctx.lineWidth = 4; seg(l, h);
+    for (const [x, y] of [[xl, yl], [xh, yh]]){ ctx.beginPath(); ctx.arc(x, y, 5, 0, 7); ctx.fillStyle = climb; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = css('--surface'); ctx.stroke(); }
+    const label = `${focus.highest ? (r.climbs.length > 1 ? 'Highest climb ' : 'Height gain ') : 'Climb ' + focus.climb + ' '}+${focus.gain_m.toLocaleString('en-GB')} m`;
+    ctx.font = `700 13px ${css('--font-num')}`; ctx.textBaseline = 'bottom';
+    const tw = ctx.measureText(label).width; let lx = xh - tw / 2; lx = Math.max(padL + 4, Math.min(W - padR - tw - 4, lx));
+    ctx.textAlign = 'left'; ctx.fillStyle = css('--surface'); ctx.fillRect(lx - 4, yh - 30, tw + 8, 18);
+    ctx.fillStyle = climb; ctx.fillText(label, lx, yh - 13);
+  }
+  // axes
+  ctx.strokeStyle = muted; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(padL + .5, padT); ctx.lineTo(padL + .5, padT + h + .5); ctx.lineTo(W - padR, padT + h + .5); ctx.stroke();
+}
+cv.addEventListener('click', e => {
+  if (!geo) return;
+  const rect = cv.getBoundingClientRect(), x = e.clientX - rect.left;
+  if (x < geo.padL || x > geo.padL + geo.w) return;
+  const t = geo.tMin + (x - geo.padL) / geo.w * (geo.tMax - geo.tMin);
+  $('#release').value = C.hms(t); runAll();
+});
+
+/* ---------- Text report (same layout as the Python script) ---------- */
+function report(name, r){
+  const out = [], w = s => out.push(s), p5 = v => String(v).padStart(5);
+  w(`IMSOARING climb analysis: ${name}`);
+  const who = [r.pilot, r.glider, r.reg || r.comp].filter(Boolean).join(', ');
+  w(`  ${r.date || 'date unknown'}${who ? ' · ' + who : ''}`);
+  w(`  Altitude: ${r.altitude_source} · Engine sensor: ${r.engine_sensor || 'none'}`); w('');
+  const L = r.launch;
+  w(`  Take-off  ${r.takeoff.time} UTC  ${p5(r.takeoff.alt_m)} m`);
+  w(`  Release   ${L.release_time} UTC  ${p5(L.release_alt_m)} m  ${L.type}, ${L.height_m} m launch (${L.found_by})`);
+  for (const e of r.engine_runs) w(`  Engine    ${e.start}–${e.end}  ${C.dur(e.duration_s)}, ${e.start_alt_m} m → ${e.end_alt_m} m${e.peak_enl ? `  (peak ENL ${e.peak_enl})` : ''}`);
+  for (const e of r.suspected_engine_runs) w(`  Suspect?  ${e.start}–${e.end}  ${C.dur(e.duration_s)} straight climb, +${e.gain_m} m at ${e.rate.toFixed(1)} m/s`);
+  w(`  Landing   ${r.landing.time} UTC  ${p5(r.landing.alt_m)} m`); w('');
+  if (r.segments.length > 1){ w('  Engine-free sections:'); for (const s of r.segments) w(`   ${s.segment}. ${s.start}–${s.end}  best ${p5(s.gain_m)} m  (${s.low_time} ${s.low_m} m → ${s.high_time} ${s.high_m} m)`); w(''); }
+  if (r.climbs.length > 1){ w('  Climbs (one per engine-free section):'); for (const c of r.climbs) w(`   ${c.climb}. ${c.low_time} → ${c.high_time}  ${p5(c.low_m)} m → ${p5(c.high_m)} m  ${('+' + c.gain_m).padStart(5)} m  ${c.avg_rate.toFixed(1).padStart(4)} m/s  ${C.dur(c.duration_s)}${c.highest ? '   ◀ HIGHEST' : ''}`); w(''); }
+  const hc = r.highest_climb;
+  if (hc){ w(`  HEIGHT GAIN  ${hc.gain_m} m  (${hc.gain_ft} ft)`); w(`    from ${hc.low_m} m at ${hc.low_time} to ${hc.high_m} m at ${hc.high_time} UTC, avg ${hc.avg_rate.toFixed(1)} m/s over ${C.dur(hc.duration_s)}`); if (r.badge_gain) w(`    Enough gain for ${r.badge_gain} (indicative only)`); }
+  else w('  No climb found after the launch.');
+  for (const m of r.warnings) w('  ! ' + uiMsg(m));
+  return out.join('\n');
+}
+$('#copyBtn').addEventListener('click', () => {
+  const f = state.flights[state.sel]; if (!f || !f.r) return;
+  const txt = report(f.sample ? 'sample flight (synthetic)' : f.name, f.r), out = $('#copied'), pre = $('#reportPre');
+  const fallback = () => { pre.hidden = false; pre.textContent = txt; const rg = document.createRange(); rg.selectNodeContents(pre); const s = getSelection(); s.removeAllRanges(); s.addRange(rg); out.textContent = 'Selected below. Press Ctrl+C or ⌘C.'; };
+  try { navigator.clipboard.writeText(txt).then(() => { out.textContent = 'Report copied.'; pre.hidden = true; }, fallback); } catch(e){ fallback(); }
+});
+
+/* ---------- Wiring ---------- */
+['#alt', '#treat', '#enl'].forEach(s => $(s).addEventListener('change', runAll));
+$('#release').addEventListener('change', runAll);
+$('#release').addEventListener('keydown', e => { if (e.key === 'Enter') runAll(); });
+$('#resetBtn').addEventListener('click', () => { $('#alt').value = 'auto'; $('#release').value = ''; $('#enl').value = 500; $('#treat').checked = false; runAll(); });
+$('#fileIn').addEventListener('change', e => { addFiles(e.target.files); e.target.value = ''; });
+const drop = $('#drop');
+['dragenter', 'dragover'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('drag'); }));
+['dragleave', 'drop'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); if (ev === 'drop' || e.target === document.documentElement) drop.classList.remove('drag'); }));
+document.addEventListener('drop', e => { if (e.dataTransfer && e.dataTransfer.files.length) addFiles(e.dataTransfer.files); });
+new ResizeObserver(() => draw()).observe(cv);
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+new MutationObserver(draw).observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
+
+state.flights = [{name: 'sample', igc: C.parseIGC(SAMPLE_IGC), sample: true}];
+runAll();
+})();
+</script>
