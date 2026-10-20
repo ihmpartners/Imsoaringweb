@@ -4,35 +4,45 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>IMSOARING</title>
-<meta name="description" content="IMSOARING makes flight video overlays, sailplane batteries, software and connected devices for glider pilots.">
+<meta name="description" content="IMSOARING develops embedded hardware and software.">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-180.png">
+<link rel="manifest" href="site.webmanifest">
+<meta name="theme-color" content="#e9b21a" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1d2e36" media="(prefers-color-scheme: dark)">
+<meta property="og:title" content="IMSOARING"><meta property="og:description" content="IMSOARING develops embedded hardware and software.">
+<meta property="og:image" content="icon-512.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=B612:ital,wght@0,400;0,700;1,400&family=B612+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-/* Layout: one column page in bands. Sky hero carrying a barograph trace, featured Flight Overlay block, three-up product row, contact strip. Brand matches the Flight Overlay app: B612 cockpit type, slate and amber. */
+/* Layout: one column page in bands. Sky hero carrying a barograph trace, featured Flight Overlay block, product grid, contact strip.
+   Brand: the IMSOARING glider icon. Glider yellow #e9b21a and slate navy #1d2e36, B612 cockpit type. */
 :root{
-  --sky-top:#c9deee; --sky-bot:#eef3f7;
-  --bg:#eef3f7; --surface:#ffffff; --well:#e3eaf0;
-  --fg:#14202b; --muted:#4f5d6a; --line:#c9d5df;
-  --accent:#f2ab3c; --accent-text:#94570a; --accent-ink:#1b1408;
-  --climb:#18865a; --trace:#14202b; --trace-fill:rgba(242,171,60,.22);
+  --brand-yellow:#e9b21a; --brand-navy:#1d2e36;
+  --sky-top:#cfdde6; --sky-bot:#eef2f4;
+  --bg:#eef2f4; --surface:#ffffff; --well:#e2e9ed;
+  --fg:#1d2e36; --muted:#4e5f68; --line:#c8d4da;
+  --accent:#e9b21a; --accent-text:#7f5c00; --accent-ink:#1d2e36;
+  --climb:#18865a; --trace:#1d2e36; --trace-fill:rgba(233,178,26,.28);
   --font-ui:"B612","Segoe UI",system-ui,sans-serif;
   --font-num:"B612 Mono",ui-monospace,Menlo,Consolas,monospace;
   --max:1120px; --r:12px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --sky-top:#0a0f14; --sky-bot:#141a20;
-  --bg:#141a20; --surface:#1c232a; --well:#10151a;
-  --fg:#e7ecf0; --muted:#97a5b1; --line:#2f3b46;
-  --accent:#f2ab3c; --accent-text:#f2ab3c; --accent-ink:#1b1408;
-  --climb:#4fd18b; --trace:#e7ecf0; --trace-fill:rgba(242,171,60,.16);
+  --sky-top:#0d161b; --sky-bot:#142128;
+  --bg:#142128; --surface:#1d2e36; --well:#0f191e;
+  --fg:#edf1f3; --muted:#9dafb8; --line:#2f4450;
+  --accent:#e9b21a; --accent-text:#e9b21a; --accent-ink:#1d2e36;
+  --climb:#4fd18b; --trace:#edf1f3; --trace-fill:rgba(233,178,26,.18);
   color-scheme:dark }}
 :root[data-theme="dark"]{
-  --sky-top:#0a0f14; --sky-bot:#141a20;
-  --bg:#141a20; --surface:#1c232a; --well:#10151a;
-  --fg:#e7ecf0; --muted:#97a5b1; --line:#2f3b46;
-  --accent:#f2ab3c; --accent-text:#f2ab3c; --accent-ink:#1b1408;
-  --climb:#4fd18b; --trace:#e7ecf0; --trace-fill:rgba(242,171,60,.16);
+  --sky-top:#0d161b; --sky-bot:#142128;
+  --bg:#142128; --surface:#1d2e36; --well:#0f191e;
+  --fg:#edf1f3; --muted:#9dafb8; --line:#2f4450;
+  --accent:#e9b21a; --accent-text:#e9b21a; --accent-ink:#1d2e36;
+  --climb:#4fd18b; --trace:#edf1f3; --trace-fill:rgba(233,178,26,.18);
   color-scheme:dark }
 
 *{box-sizing:border-box}
@@ -49,18 +59,20 @@ p{margin:0}
 /* Header */
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--sky-top) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:21;background:var(--sky-top)}
-.top .wrap{display:flex;align-items:center;gap:20px;padding-block:14px}
-.logo{display:flex;align-items:center;gap:10px;text-decoration:none;font-weight:700;letter-spacing:.14em;font-size:18px}
+.top .wrap{display:flex;align-items:center;gap:20px;padding-block:12px}
+.logo{display:flex;align-items:center;gap:12px;text-decoration:none;font-weight:700;letter-spacing:.14em;font-size:18px}
+.logo img{flex:none;width:38px;height:38px;display:block}
 .logo b{color:var(--accent-text)}
-.logo svg{flex:none}
 nav{margin-left:auto;display:flex;gap:22px;font-size:14px}
 nav a{text-decoration:none;color:var(--muted)}
 nav a:hover{color:var(--fg)}
 @media (max-width:560px){nav a.opt{display:none}}
 
 /* Hero */
-.hero{background:linear-gradient(180deg,var(--sky-top),var(--sky-bot))}
-.hero .wrap{padding-block:64px 40px;display:grid;gap:28px}
+.hero{background:linear-gradient(180deg,var(--sky-top),var(--sky-bot));position:relative;overflow:hidden}
+.hero .wrap{padding-block:64px 40px;display:grid;gap:28px;position:relative}
+.hero-mark{position:absolute;right:max(16px,calc((100% - var(--max))/2 + 16px));top:40px;width:clamp(120px,22vw,260px);height:auto;opacity:.95;pointer-events:none}
+@media (max-width:900px){.hero-mark{display:none}}
 .hero h1{font-size:clamp(34px,6vw,64px);font-weight:700;letter-spacing:-.01em;max-width:15ch}
 .hero .lede{font-size:clamp(17px,2vw,19px);color:var(--muted);max-width:56ch}
 .ctas{display:flex;gap:12px;flex-wrap:wrap}
@@ -88,7 +100,7 @@ section.band{padding-block:72px}
 .sec-head p{color:var(--muted)}
 
 /* Flight Overlay feature */
-.feature{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:40px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:36px}
+.feature{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:40px;align-items:center;background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--accent);border-radius:var(--r);padding:36px}
 @media (max-width:860px){.feature{grid-template-columns:minmax(0,1fr);padding:24px}}
 .feature h3{font-size:clamp(24px,3vw,32px);margin:6px 0 12px}
 .feature .copy{display:grid;gap:18px;min-width:0}
@@ -101,7 +113,7 @@ section.band{padding-block:72px}
 .price .k{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
 .price .v{font-family:var(--font-num);font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
 .price .s{font-size:13px;color:var(--muted)}
-.price.pro{border-color:var(--accent)}
+.price.pro{border-color:var(--accent);border-width:2px}
 
 .screen{background:#0e1216;border-radius:10px;border:1px solid var(--line);aspect-ratio:16/10;max-width:100%;position:relative;overflow:hidden}
 .screen svg{width:100%;height:100%;display:block}
@@ -116,7 +128,7 @@ section.band{padding-block:72px}
 .prod ul li::before{content:"";width:7px;height:7px;margin-top:9px;border-radius:50%;background:var(--accent)}
 .prod .chip{margin-top:auto}
 .prod{display:flex;flex-direction:column;gap:12px;padding:26px 24px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);min-width:0}
-.prod .ic{width:44px;height:44px;border-radius:10px;background:var(--well);display:grid;place-items:center;color:var(--accent-text)}
+.prod .ic{width:44px;height:44px;border-radius:10px;background:var(--accent);display:grid;place-items:center;color:var(--brand-navy)}
 .prod h3{font-size:21px}
 .prod p{color:var(--muted);font-size:15px}
 .chip{justify-self:start;font-family:var(--font-num);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
@@ -129,17 +141,23 @@ section.band{padding-block:72px}
 .about p{color:var(--muted);max-width:62ch}
 .about p + p{margin-top:14px}
 
-/* Contact */
-.contact{background:var(--surface);border-top:1px solid var(--line)}
+/* Contact: brand yellow band */
+.contact{background:var(--brand-yellow);color:var(--brand-navy)}
 .contact .wrap{padding-block:64px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:center}
 @media (max-width:760px){.contact .wrap{grid-template-columns:minmax(0,1fr)}}
 .contact h2{font-size:clamp(26px,3.6vw,38px);margin-bottom:8px}
-.contact p{color:var(--muted)}
+.contact p{color:rgba(29,46,54,.82)}
+.contact .btn{background:var(--brand-navy);border-color:var(--brand-navy);color:#fff}
+.contact :focus-visible{outline-color:var(--brand-navy)}
 .mail{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.mail code{font-family:var(--font-num);font-size:clamp(16px,2.4vw,20px);background:var(--well);border:1px solid var(--line);border-radius:10px;padding:11px 16px;user-select:all;overflow-wrap:anywhere}
-.copied{font-size:13px;color:var(--climb);min-height:1.2em}
+.mail code{font-family:var(--font-num);font-size:clamp(16px,2.4vw,20px);background:rgba(255,255,255,.55);border:1px solid rgba(29,46,54,.25);color:var(--brand-navy);border-radius:10px;padding:11px 16px;user-select:all;overflow-wrap:anywhere}
+.contact .copied{color:var(--brand-navy);font-weight:700}
+.copied{font-size:13px;min-height:1.2em}
 
-footer .wrap{padding-block:28px;display:flex;gap:12px 24px;flex-wrap:wrap;justify-content:space-between;font-size:13px;color:var(--muted)}
+footer{background:var(--brand-navy);color:#c9d4d9}
+footer .wrap{padding-block:24px;display:flex;gap:12px 24px;flex-wrap:wrap;align-items:center;justify-content:space-between;font-size:13px}
+footer .brand{display:flex;align-items:center;gap:10px}
+footer .brand img{width:26px;height:26px;display:block}
 footer .reg{font-family:var(--font-num)}
 </style>
 </head>
@@ -148,7 +166,7 @@ footer .reg{font-family:var(--font-num)}
 <header class="top">
   <div class="wrap">
     <a class="logo" href="#top" aria-label="IMSOARING home">
-      <svg width="34" height="22" viewBox="0 0 30 20" aria-hidden="true"><path d="M1 8.5h28M15 3v14M11.5 16.5h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/><path d="M15 3l-1.6 3h3.2z" fill="var(--accent)"/></svg>
+      <img src="icon-192.png" width="38" height="38" alt="">
       <span>IM<b>SOARING</b></span>
     </a>
     <nav aria-label="Main">
@@ -161,12 +179,13 @@ footer .reg{font-family:var(--font-num)}
 
 <main id="top">
   <section class="hero">
+    <img class="hero-mark" src="icon-512.png" width="512" height="512" alt="">
     <div class="wrap">
-      <span class="eyebrow">Soaring kit &amp; software</span>
-      <h1>Built for pilots who fly on rising air.</h1>
-      <p class="lede">IMSOARING makes flight video overlays, sailplane batteries, custom software and connected devices for glider pilots. Everything is designed and tested by someone who flies.</p>
+      <span class="eyebrow">Embedded - at the heart of your ideas </span>
+      <h1>Embedded Hardware & Software from concept to commercialisation.</h1>
+      <p class="lede">IMSOARING develops embedded hardware and software on a project or contract basis. We have a range of niche embedded devices and focussed software applications for the gliding community.  </p>
       <div class="ctas">
-        <a class="btn primary" href="#overlay">See Flight Overlay</a>
+        <a class="btn primary" href="#overlay">See Flight Instrument Video Overlay</a>
         <a class="btn" href="#products">All products</a>
       </div>
 
@@ -217,39 +236,39 @@ footer .reg{font-family:var(--font-num)}
               <rect x="306" y="96" width="28" height="70" rx="6" fill="#e9eef2" opacity=".85"/>
               <!-- altitude -->
               <g transform="translate(22 22)">
-                <rect width="150" height="58" rx="10" fill="rgba(10,14,18,.55)"/>
+                <rect width="150" height="58" rx="10" fill="rgba(29,46,54,.62)"/>
                 <text x="12" y="20" fill="rgba(243,246,248,.62)" font-family="B612 Mono, monospace" font-size="11">ALT</text>
                 <text x="12" y="46" fill="#f3f6f8" font-family="B612 Mono, monospace" font-size="24" font-weight="700">1,642<tspan font-size="13" fill="rgba(243,246,248,.62)"> m</tspan></text>
               </g>
               <g transform="translate(22 88)">
-                <rect width="150" height="58" rx="10" fill="rgba(10,14,18,.55)"/>
+                <rect width="150" height="58" rx="10" fill="rgba(29,46,54,.62)"/>
                 <text x="12" y="20" fill="rgba(243,246,248,.62)" font-family="B612 Mono, monospace" font-size="11">GS</text>
                 <text x="12" y="46" fill="#f3f6f8" font-family="B612 Mono, monospace" font-size="24" font-weight="700">86<tspan font-size="13" fill="rgba(243,246,248,.62)"> km/h</tspan></text>
               </g>
               <!-- vario dial -->
               <g transform="translate(92 302)">
-                <circle r="78" fill="rgba(10,14,18,.6)"/>
+                <circle r="78" fill="rgba(29,46,54,.68)"/>
                 <path d="M-62 0 A62 62 0 0 1 62 0" stroke="rgba(243,246,248,.25)" stroke-width="7" fill="none"/>
                 <path d="M0 -62 A62 62 0 0 1 43.8 -43.8" stroke="#56e08f" stroke-width="7" fill="none"/>
                 <g stroke="rgba(243,246,248,.6)" stroke-width="2">
                   <line x1="-70" y1="0" x2="-58" y2="0"/><line x1="70" y1="0" x2="58" y2="0"/><line x1="0" y1="-70" x2="0" y2="-58"/>
                   <line x1="-49.5" y1="-49.5" x2="-41" y2="-41"/><line x1="49.5" y1="-49.5" x2="41" y2="-41"/>
                 </g>
-                <line x1="0" y1="0" x2="40" y2="-48" stroke="#f5b142" stroke-width="4" stroke-linecap="round"/>
-                <circle r="6" fill="#f5b142"/>
+                <line x1="0" y1="0" x2="40" y2="-48" stroke="#e9b21a" stroke-width="4" stroke-linecap="round"/>
+                <circle r="6" fill="#e9b21a"/>
                 <text y="30" text-anchor="middle" fill="#56e08f" font-family="B612 Mono, monospace" font-size="20" font-weight="700">+2.6</text>
                 <text y="48" text-anchor="middle" fill="rgba(243,246,248,.62)" font-family="B612 Mono, monospace" font-size="11">m/s · avg +1.9</text>
               </g>
               <!-- map -->
               <g transform="translate(498 258)">
-                <rect width="124" height="124" rx="10" fill="rgba(10,14,18,.55)"/>
-                <path d="M18 104 C30 80 22 64 44 56 C60 50 52 34 70 30 C82 27 92 40 100 22" stroke="#f5b142" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                <rect width="124" height="124" rx="10" fill="rgba(29,46,54,.62)"/>
+                <path d="M18 104 C30 80 22 64 44 56 C60 50 52 34 70 30 C82 27 92 40 100 22" stroke="#e9b21a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
                 <circle cx="100" cy="22" r="5" fill="#f3f6f8"/>
                 <text x="108" y="114" text-anchor="end" fill="rgba(243,246,248,.62)" font-family="B612 Mono, monospace" font-size="10">N↑</text>
               </g>
               <!-- clock -->
               <g transform="translate(498 22)">
-                <rect width="120" height="38" rx="10" fill="rgba(10,14,18,.55)"/>
+                <rect width="120" height="38" rx="10" fill="rgba(29,46,54,.62)"/>
                 <text x="60" y="25" text-anchor="middle" fill="#f3f6f8" font-family="B612 Mono, monospace" font-size="16">13:47:12</text>
               </g>
             </svg>
@@ -264,8 +283,8 @@ footer .reg{font-family:var(--font-num)}
     <div class="wrap">
       <div class="sec-head">
         <span class="eyebrow">What we make</span>
-        <h2>Software, power and hardware for gliding</h2>
-        <p>Alongside Flight Overlay, IMSOARING makes apps for gliding clubs and instructors, supplies sailplane batteries and builds connected devices for the airfield.</p>
+        <h2>Software, power and hardware</h2>
+        <p>Alongside Flight Overlay, IMSOARING makes apps for gliding clubs and instructors, supplies sailplane batteries and builds connected devices.</p>
       </div>
       <div class="grid3">
         <article class="prod">
@@ -284,29 +303,67 @@ footer .reg{font-family:var(--font-num)}
         <article class="prod">
           <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h11a3 3 0 0 1 3 3v12H7a3 3 0 0 1-3-3z"/><path d="M18 8h2v12h-2M8 10h6M8 14h4"/></svg></div>
           <span class="kind">Software</span>
-          <h3>BGA Offline Training App</h3>
-          <p>The BGA SPL training record card as an app that works without a signal. Instructors record each student's training at the launch point, even on airfields with no mobile coverage, and the record stays complete from first flight to Sailplane Pilot Licence.</p>
+          <h3>SPL Offline Training App</h3>
+          <p>The SPL training record card as an app that works without a signal. Instructors record each student's training at the launch point, even on airfields with no mobile coverage, and the record stays complete from first flight to Sailplane Pilot Licence.</p>
           <ul>
-            <li><span>Works fully offline, so a weak signal at the launch point never holds up a debrief.</span></li>
+            <li><span>Works fully offline, so a weak signal at the launch point never holds up a brief, debrief or even inflight records.</span></li>
             <li><span>Each exercise on the SPL record card recorded and signed off flight by flight.</span></li>
-            <li><span>See where a student is up to before the next flight.</span></li>
-            <li><span>No lost, damp or illegible paper cards.</span></li>
+            <li><span>See where a student is up to before the next flight, instantly at a glance.</span></li>
+            <li><span>No lost, damp or illegible paper cards.</span>
+            <li><span>Portable, verified, and always accessible training records.</span></li>
           </ul>
-          <span class="chip">For BGA instructors &amp; students</span>
+          <span class="chip">For SPL instructors &amp; students</span>
         </article>
         <article class="prod">
           <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="16" height="12" rx="2"/><path d="M21 11v4M7 7V5h3v2M12 7V5h3v2M8.5 13h3M10 11.5v3"/></svg></div>
           <span class="kind">Hardware</span>
           <h3>Sailplane batteries</h3>
-          <p>Lightweight batteries for glider avionics, built to fit standard battery bays and keep your vario, radio and FLARM running through a long cross-country day.</p>
+          <p>Lightweight LiFePO4batteries for glider avionics, built to fit standard battery bays and keep modern panel avionics like your vario, Multifunction display, radio and transponder running through a long cross-country day.</p>
           <span class="chip">Enquire for sizes</span>
+        </article>
+        <article class="prod">
+          <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="7" width="16" height="12" rx="2" />
+              <path d="M21 11v4M7 7V5h3v2M12 7V5h3v2M8.5 13h3M10 11.5v3" />
+            </svg></div>
+          <span class="kind">Hardware</span>
+          <h3>Heated Clothing Controller</h3>
+          <p>Controller for heated clothing in the cockpit, ensuring you stay warm during long flights without bulky layers.</p>
+          <span class="chip">Enquire </span>
+        </article> 
+        <article class="prod">
+          <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4 5h11a3 3 0 0 1 3 3v12H7a3 3 0 0 1-3-3z" />
+              <path d="M18 8h2v12h-2M8 10h6M8 14h4" />
+            </svg></div>
+          <span class="kind">Commercial Software</span>
+          <h3>Bootfair Expense Tracking</h3>
+          <ul>
+            <li><span>Fair Ledger is a per-event profit tracker for craft fair and market sellers. A seller logs each fair’s pitch fee,
+            mileage, hours and what they packed. Afterwards they count what came home, or import their card reader’s CSV. The app
+            then shows real profit, £ per hour, and a Rebook / Review / Drop verdict for each fair.</span></li>
+            <li><span>Profit is revenue minus cost of goods, pitch and application fees, other costs, and mileage. Mileage defaults to 55p a
+            mile (HMRC’s rate) and can be changed per seller or per fair.</span></li>
+            <li><span>Revenue comes from recorded takings if there are any. Otherwise it’s worked out from the pack list as (items out − items
+            back) × price.</span></li>
+            <li><span>Verdict:
+              <ul>
+                <li><span>Drop if the fair lost money.</span></li>
+                <li><span>Review if it came in under the target £/hour (default £12). </span></li>
+                <li><span>Otherwise Rebook.</span></li>
+                </ul>
+           <li><span> Money is stored as whole pence throughout.</span></li>
+          </ul>
+          <span class="chip">For Craft, Maker and Boot Fair sellers</span>
         </article>
         <article class="prod">
           <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="8" height="8" rx="1.5"/><path d="M10 4v4M14 4v4M10 16v4M14 16v4M4 10h4M4 14h4M16 10h4M16 14h4"/></svg></div>
           <span class="kind">Hardware</span>
           <h3>IoT developments</h3>
-          <p>Connected devices for the airfield and the trailer: battery and charge monitoring, weather sensing and remote telemetry.</p>
-          <span class="chip">In development</span>
+          <p>Connected and embedded devices for all situations from access to your submarine base, undersea cables to the airfield and stored vehicles, charge monitoring, weather sensing and remote telemetry.</p>
+          <span class="chip">Development</span>
         </article>
       </div>
     </div>
@@ -320,9 +377,10 @@ footer .reg{font-family:var(--font-num)}
           <h2>Made by a pilot</h2>
         </div>
         <div>
-          <p>IMSOARING started in the cockpit. Every product begins with a problem met on a real flight, whether that's a flat battery on a good day, a log that wouldn't line up with the video, a broken winch on a soarable day, or a paper training card in the rain with no phone signal.</p>
-          <p>We keep things simple, light and dependable, because that's what you want strapped into a glider.</p>
-        </div>
+          <p>IMSOARING started more than 40 years ago. Every product begins with a problem met in a real life situation, whether that's fraudulent  credit card useage, a flat battery on a clay shooting ground, boring flight videos, a broken winch on a soarable day, or a paper training card in the rain with no phone signal.</p>
+          <p>Our mission is to make every development experience smooth and hassle-free through thoughtful design and reliable technology.</p>
+          <p>We keep things simple, light and dependable, because that's what you want!</p>
+       </div>
       </div>
     </div>
   </section>
@@ -332,7 +390,7 @@ footer .reg{font-family:var(--font-num)}
   <div class="wrap">
     <div>
       <h2>Talk to us</h2>
-      <p>Questions about Flight Overlay, the equipment maintenance or BGA offline training apps, battery sizes, or an IoT project? Send an email.</p>
+      <p>Questions about products or an IoT project? Send an email.</p>
     </div>
     <div>
       <div class="mail">
@@ -346,7 +404,7 @@ footer .reg{font-family:var(--font-num)}
 
 <footer>
   <div class="wrap">
-    <span>© 2026 IMSOARING</span>
+    <span class="brand"><img src="icon-192.png" width="26" height="26" alt="">© 2026 IMSOARING</span>
     <span class="reg">imsoaring.co</span>
   </div>
 </footer>

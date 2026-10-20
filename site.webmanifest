@@ -1,0 +1,13 @@
+{
+  "name": "IMSOARING",
+  "short_name": "IMSOARING",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#e9b21a",
+  "theme_color": "#1d2e36",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
